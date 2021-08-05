@@ -12,21 +12,27 @@ import {
 
 export default class App extends React.Component {
   state = {
-    latestNews: [],
-    is_loading: true,
-    current_page: 1,
-    from_index: 0,
+    latest_news: [], // Get all the latest news
+    is_loading: true, // Loader until gets all the data
+    current_page: 1, // Each page shows only 30 records in a page, increment page after each 30 records
+    from_index: 0, // it is to iterate latest news from 30 to 30
     to_index: 30,
-    lastRecord: false
+    is_last_batch: false // check whether the last batch arrived
   }
   componentDidMount() {
+    /**
+     * Get all the latest news id
+     * Query each record details with the acquired it
+     * Save the each record in latest_news state
+     * Make is_loading as flase since we got all the records
+     */
     axios.get(`https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty`)
       .then(latest_news => {
         latest_news.data.map(news_id => 
           axios.get(`https://hacker-news.firebaseio.com/v0/item/${news_id}.json?print=pretty`)
           .then(news => 
             this.setState({
-              latestNews: [...this.state.latestNews, news['data']]
+              latest_news: [...this.state.latest_news, news['data']]
             })
           )
         ) 
@@ -35,18 +41,29 @@ export default class App extends React.Component {
   }
 
   render() {
+
+    /**
+     * getTime - It gets the time ago for the given timestamp 
+     * @param {*} timestamp - The given timestamp of the post
+     * @returns time ago for the given timestap
+     */
     const getTime = (timestamp) => {
       const dateTimeAgo = moment.unix(timestamp).format("YYYY-MM-DD HH:mm:ss")
       return moment(dateTimeAgo).fromNow();
     }
+
+    /**
+     * handleMore - It handles the more link of the page, it gets the nxt batch
+     * returns - Nothing
+     */
     const handleMore = () => {
       this.setState({current_page: this.state.current_page+1})
       this.setState({from_index: this.state.from_index+30})
-      if(this.state.latestNews.length >= this.state.from_index+30) {
+      if(this.state.latest_news.length >= this.state.from_index+30) {
         this.setState({to_index: this.state.to_index+30})
       } else {
-        this.setState({from_index: this.state.from_index + (this.state.latestNews.length - this.state.from_index)})
-        this.setState({'lastRecord': true})
+        this.setState({from_index: this.state.from_index + (this.state.latest_news.length - this.state.from_index)})
+        this.setState({'is_last_batch': true})
       }
   
     }
@@ -73,8 +90,8 @@ export default class App extends React.Component {
           }
         </StyledCard>
         {
-          this.state.latestNews.length > 30 &&
-            this.state.latestNews
+          this.state.latest_news.length > 30 &&
+            this.state.latest_news
             .slice(this.state.from_index, this.state.to_index)
             .map((news, index) => (
               <TableRows>
@@ -91,7 +108,7 @@ export default class App extends React.Component {
           ))
         }
         {
-        !this.state.lastRecord && <MoreLinkComponent href="#" onClick={() => handleMore()}>More</MoreLinkComponent>
+        !this.state.is_last_batch && <MoreLinkComponent href="#" onClick={() => handleMore()}>More</MoreLinkComponent>
         }
       </React.Fragment>
     );
