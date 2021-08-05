@@ -2,16 +2,23 @@ import './App.css';
 import React from 'react';
 import axios from 'axios';
 import moment from 'moment';
-import { Card, Image } from 'semantic-ui-react';
+import { Card, Image, Dimmer, Loader } from 'semantic-ui-react';
 import {
   StyledCard,
-  TableRows
+  TableRows,
+  SubText,
+  SubTextSpan,
+  MoreLinkComponent
 } from './style';
 
 export default class App extends React.Component {
   state = {
     latestNews: [],
-    current_page: 1
+    is_loading: true,
+    current_page: 1,
+    from_index: 0,
+    to_index: 30,
+    lastRecord: false
   }
   componentDidMount() {
     axios.get(`https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty`)
@@ -24,6 +31,7 @@ export default class App extends React.Component {
             })
           )
         ) 
+        this.setState({is_loading: false})
       })
   }
 
@@ -31,6 +39,17 @@ export default class App extends React.Component {
     const getTime = (timestamp) => {
       const dateTimeAgo = moment.unix(timestamp).format("YYYY-MM-DD HH:mm:ss")
       return moment(dateTimeAgo).fromNow();
+    }
+    const handleMore = () => {
+      this.setState({current_page: this.state.current_page+1})
+      this.setState({from_index: this.state.from_index+30})
+      if(this.state.latestNews.length >= this.state.from_index+30) {
+        this.setState({to_index: this.state.to_index+30})
+      } else {
+        this.setState({from_index: this.state.from_index + (this.state.latestNews.length - this.state.from_index)})
+        this.setState({'lastRecord': true})
+      }
+  
     }
 
     return (
@@ -46,24 +65,35 @@ export default class App extends React.Component {
           </Card.Content>
           </Card>
           <br/>
+          {this.state.is_loading ?
+            <Dimmer active>
+              <Loader>Loading</Loader>
+            </Dimmer>
+            :
+            <div></div>
+          }
         </StyledCard>
         {
           this.state.latestNews.length > 30 &&
             this.state.latestNews
-            .slice(0, this.state.current_page*30)
-            .map(news => (
+            .slice(this.state.from_index, this.state.to_index)
+            .map((news, index) => (
               <TableRows>
                 <Card.Group>
-                  {console.log(news)}
                   <Card fluid key={news.id}>
-                    <a href={news.url}>{news.title}</a>
-                    <p>{news.descendants} points by {news.by} {getTime(news.time)}</p>
+                    <a href={news.url}>
+                      {this.state.from_index+index+1}. {news.title}
+                      <SubTextSpan> ({news.url && news.url.split('/')[2]})</SubTextSpan></a>
+                    <SubText>{news.descendants} points by {news.by} {getTime(news.time)} | {news.kids ? news.kids.length : 0} comments</SubText>
                     
                   </Card>
                 </Card.Group>
               </TableRows>
           ))
-        } 
+        }
+        {
+        !this.state.lastRecord && <MoreLinkComponent href="#" onClick={() => handleMore()}>More</MoreLinkComponent>
+        }
       </React.Fragment>
     );
   } 
