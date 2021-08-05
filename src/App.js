@@ -1,4 +1,3 @@
-import './App.css';
 import React from 'react';
 import axios from 'axios';
 import moment from 'moment';
@@ -61,7 +60,7 @@ export default class App extends React.Component {
               <Image 
               src='https://pbs.twimg.com/profile_images/378800000011494576/9c90acb704cbf9eef6135009c9bb5657_400x400.png' />
             </div>
-            <Card.Header>Hackerrank News</Card.Header>
+            <Card.Header>Hacker News</Card.Header>
           </Card.Content>
           </Card>
           <br/>
